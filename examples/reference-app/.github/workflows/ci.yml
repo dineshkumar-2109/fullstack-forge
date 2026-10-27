@@ -1,0 +1,38 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run format:check
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm audit --omit=dev --audit-level=high
+  docker:
+    runs-on: ubuntu-latest
+    needs: quality
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t tasklane:ci .
+      - name: Container smoke test
+        run: |
+          docker run -d --name tl -p 3000:3000 -e PUBLIC_ORIGIN=http://localhost:3000 tasklane:ci
+          for i in $(seq 1 30); do curl -fsS localhost:3000/healthz && break; sleep 1; done
+          curl -fsS localhost:3000/readyz
+          docker logs tl

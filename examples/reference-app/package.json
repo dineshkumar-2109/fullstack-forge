@@ -1,0 +1,28 @@
+{
+  "name": "tasklane",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Tasklane \u2014 personal projects and tasks. Reference implementation for the fullstack-engineering skill: zero runtime dependencies, production patterns throughout.",
+  "type": "module",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "start": "node --disable-warning=ExperimentalWarning src/server.js",
+    "dev": "node --disable-warning=ExperimentalWarning --watch src/server.js",
+    "test": "node --disable-warning=ExperimentalWarning --test --test-reporter=spec \"tests/**/*.test.js\"",
+    "lint": "eslint .",
+    "typecheck": "tsc -p tsconfig.json",
+    "format:check": "node scripts/check-format.js",
+    "db:migrate": "node --disable-warning=ExperimentalWarning scripts/migrate.js",
+    "db:seed": "node --disable-warning=ExperimentalWarning scripts/seed.js",
+    "test:e2e": "node e2e/stories.e2e.mjs"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/node": "22.20.5",
+    "eslint": "10.13.0",
+    "globals": "17.13.0",
+    "typescript": "5.9.3"
+  }
+}

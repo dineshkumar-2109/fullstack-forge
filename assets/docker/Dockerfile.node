@@ -1,0 +1,28 @@
+# syntax=docker/dockerfile:1
+# Generic production Dockerfile for a Node.js app with a build step (Next.js, Vite SSR, NestJS, Express+TS…).
+# Adapt: build output dir, start command, health path. Keep: multi-stage, npm ci, non-root, HEALTHCHECK, exec-form CMD.
+ARG NODE_VERSION=22
+
+FROM node:${NODE_VERSION}-alpine AS deps
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci --no-audit --no-fund
+
+FROM node:${NODE_VERSION}-alpine AS build
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+RUN npm run build && npm prune --omit=dev
+
+FROM node:${NODE_VERSION}-alpine AS runtime
+ENV NODE_ENV=production PORT=3000
+WORKDIR /app
+COPY --from=build --chown=node:node /app/package.json ./
+COPY --from=build --chown=node:node /app/node_modules ./node_modules
+# Adjust to your build output (e.g. .next + public for Next.js standalone, dist for compiled TS):
+COPY --from=build --chown=node:node /app/dist ./dist
+USER node
+EXPOSE 3000
+HEALTHCHECK --interval=15s --timeout=3s --start-period=20s --retries=3 \
+  CMD wget -qO- http://127.0.0.1:3000/healthz || exit 1
+CMD ["node", "dist/server.js"]
